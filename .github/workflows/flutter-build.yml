@@ -41,8 +41,8 @@ jobs:
 
       - name: Build debug APK
         working-directory: telink_app
-        run: flutter build apk --debug --dart-define=API_URL=https://your-api-url.example.com
-
+        run: flutter build apk --debug --dart-define=API_URL=https://2bdb-102-159-226-182.ngrok-free.app
+     
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
