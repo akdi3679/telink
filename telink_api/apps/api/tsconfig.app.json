@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "outDir": "../../dist/apps/api",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true
+  },
+  "include": [
+    "src/**/*",
+    "../../libs/core/**/*",
+    "../../libs/modules/auth/**/*",
+    "../../libs/modules/users/**/*",
+    "../../libs/modules/oidc/**/*"
+  ],
+  "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
+}

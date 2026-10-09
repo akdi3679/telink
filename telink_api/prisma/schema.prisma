@@ -1,0 +1,211 @@
+// Telink Prisma schema.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone         String   @unique
+  email         String   @unique
+  emailVerified Boolean  @default(false) @map("email_verified")
+  passwordHash  String   @map("password_hash")
+  role          String   @default("user")
+  status        String   @default("active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  profile  Profile?
+  sessions Session[]
+  passkeys PasskeyCredential[]
+  recoveryCodes RecoveryCode[]
+  securityQuestions SecurityQuestion[]
+
+  @@map("users")
+}
+
+model Profile {
+  userId        String   @id @map("user_id") @db.Uuid
+  firstName     String   @map("first_name")
+  lastName      String   @map("last_name")
+  role          String
+  jobTitle      String   @map("job_title")
+  headline      String?
+  bio           String?
+  workTitle     String?  @map("work_title")
+  workCompany   String?  @map("work_company")
+  city          String?
+  country       String?
+  photoUrl      String?  @map("photo_url")
+  bannerUrl     String?  @map("banner_url")
+  languages     String[] @default([])
+  categories    String[] @default([])
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model PendingSignup {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone      String
+  email      String
+  codeHash   String    @map("code_hash")
+  attempts   Int       @default(0)
+  expiresAt  DateTime  @map("expires_at")
+  verifiedAt DateTime? @map("verified_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([phone])
+  @@index([email])
+  @@index([expiresAt])
+  @@map("pending_signups")
+}
+
+model Session {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  deviceId      String?   @map("device_id")
+  ip            String?
+  userAgent     String?   @map("user_agent")
+  geoCity       String?   @map("geo_city")
+  geoCountry    String?   @map("geo_country")
+  geoLat        Decimal?  @map("geo_lat") @db.Decimal(9, 6)
+  geoLng        Decimal?  @map("geo_lng") @db.Decimal(9, 6)
+  geoSource     String?   @map("geo_source") // ip | none
+  dpopPublicKeyJwk Json? @map("dpop_public_key_jwk")
+  lastSeenAt    DateTime  @default(now()) @map("last_seen_at")
+  expiresAt     DateTime  @map("expires_at")
+  revokedAt     DateTime? @map("revoked_at")
+  revokedReason String?   @map("revoked_reason")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  user   User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokens RefreshToken[]
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model RefreshToken {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId    String    @map("session_id") @db.Uuid
+  tokenHash    String    @unique @map("token_hash")
+  usedAt       DateTime? @map("used_at")
+  replacedById String?   @map("replaced_by_id") @db.Uuid
+  expiresAt    DateTime  @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model SecurityEvent {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  sessionId    String?  @map("session_id") @db.Uuid
+  action       String
+  deviceId     String?  @map("device_id")
+  ip           String?
+  userAgent    String?  @map("user_agent")
+  geoCity      String?  @map("geo_city")
+  geoCountry   String?  @map("geo_country")
+  details      Json     @default("{}")
+  signature    String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@map("security_events")
+}
+
+model OidcPayload {
+  id         String    @map("id")
+  modelName  String    @map("model_name")
+  payload    Json
+  grantId    String?   @map("grant_id")
+  userCode   String?   @map("user_code")
+  uid        String?   @map("uid")
+  expiresAt  DateTime? @map("expires_at")
+  consumedAt DateTime? @map("consumed_at")
+
+  @@id([id, modelName])
+  @@index([modelName])
+  @@index([grantId])
+  @@index([uid])
+  @@index([expiresAt])
+  @@map("oidc_payloads")
+}
+
+model OidcSigningKey {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  kid        String    @unique
+  alg        String    @default("RS256")
+  publicJwk  Json      @map("public_jwk")
+  privateJwk Json      @map("private_jwk")
+  encrypted  Boolean   @default(false)
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now()) @map("created_at")
+  rotatedAt  DateTime? @map("rotated_at")
+
+  @@index([active])
+  @@map("oidc_signing_keys")
+}
+model PasskeyCredential {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  credentialId String    @unique @map("credential_id")
+  publicKey    Bytes     @map("public_key")
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  name         String?
+  aaguid       String?
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastUsedAt   DateTime? @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("passkey_credentials")
+}
+
+model RecoveryCode {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  codeHash  String    @map("code_hash")
+  usedAt    DateTime? @map("used_at")
+  usedFromIp String?  @map("used_from_ip")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@map("recovery_codes")
+}
+
+model SecurityQuestion {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  questionKey  String   @map("question_key")
+  questionText String?  @map("question_text")
+  answerHash   String   @map("answer_hash")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionKey])
+  @@index([userId])
+  @@map("security_questions")
+}

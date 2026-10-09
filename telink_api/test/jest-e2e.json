@@ -1,0 +1,13 @@
+{
+  "moduleFileExtensions": ["js", "json", "ts"],
+  "rootDir": "..",
+  "testEnvironment": "node",
+  "testRegex": ".e2e-spec.ts$",
+  "transform": { "^.+\\.(t|j)s$": "ts-jest" },
+  "testTimeout": 180000,
+  "setupFiles": ["<rootDir>/test/setup-env.ts"],
+  "moduleNameMapper": {
+    "^@telink/core(|/.*)$": "<rootDir>/libs/core/src/$1",
+    "^@telink/modules/([a-z-]+)(|/.*)$": "<rootDir>/libs/modules/$1/src/$2"
+  }
+}
