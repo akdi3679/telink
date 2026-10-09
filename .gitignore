@@ -1,19 +1,14 @@
 ﻿# Dependencies
 node_modules/
 .pnpm-store/
-**/node_modules/
 
 # Env files (secrets)
 .env
 .env.local
-**/.env
-**/.env.local
 
 # Build outputs
 dist/
 build/
-**/dist/
-**/build/
 *.apk
 *.aab
 
@@ -21,10 +16,8 @@ build/
 .dart_tool/
 .flutter-plugins
 .flutter-plugins-dependencies
-**/.dart_tool/
-**/build/
 
-# Prisma
+# Prisma local dev DB (unused but harmless)
 **/prisma/migrations/dev.db*
 
 # IDE
@@ -34,6 +27,6 @@ build/
 .DS_Store
 Thumbs.db
 
-# Local data
-data/
-**/*.mmdb
+# Local data - ANCHORED TO REPO ROOT ONLY
+/data/
+*.mmdb
