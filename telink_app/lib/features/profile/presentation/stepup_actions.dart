@@ -33,7 +33,7 @@ Future<bool> requireStepUp(BuildContext context, WidgetRef ref) async {
       return false;
     }
     if (!context.mounted) return false;
-    return showStepUpVerifyDialog(context, ref);
+    return await showStepUpVerifyDialog(context, ref);
   } catch (e) {
     return false;
   }
