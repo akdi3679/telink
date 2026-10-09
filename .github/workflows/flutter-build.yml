@@ -1,0 +1,51 @@
+name: Flutter Android Build
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'telink_app/**'
+      - '.github/workflows/flutter-build.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install dependencies
+        working-directory: telink_app
+        run: flutter pub get
+
+      - name: Analyze
+        working-directory: telink_app
+        run: flutter analyze
+
+      - name: Run tests
+        working-directory: telink_app
+        run: flutter test
+
+      - name: Build debug APK
+        working-directory: telink_app
+        run: flutter build apk --debug --dart-define=API_URL=https://your-api-url.example.com
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: telink-debug-apk
+          path: telink_app/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
