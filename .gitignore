@@ -1,0 +1,35 @@
+﻿# Dependencies
+node_modules/
+.pnpm-store/
+
+# Env files (secrets)
+.env
+.env.local
+
+# Build outputs
+dist/
+build/
+*.apk
+*.aab
+
+# Flutter
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+telink_app/.dart_tool/
+telink_app/build/
+
+# Prisma
+telink_api/node_modules/
+telink_api/dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Data
+data/
+*.mmdb
