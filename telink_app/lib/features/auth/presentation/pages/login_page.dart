@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/env/env.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/security/passkey_error.dart';
 import '../providers/auth_providers.dart';
@@ -190,6 +191,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 ),
               ],
               const SizedBox(height: 24),
+              const SizedBox(height: 8),
+              // DEBUG ONLY: shows which API this build was compiled against.
+              // Remove once mobile builds are stable.
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.black12,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: const Text(
+                  'API: ${Env.apiUrl}',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 10, fontFamily: 'monospace'),
+                ),
+              ),
+              const SizedBox(height: 12),
               TextButton(
                 onPressed: () => context.push(Routes.debugWebauthn),
                 child: const Text(
