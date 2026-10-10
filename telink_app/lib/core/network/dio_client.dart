@@ -6,7 +6,6 @@ import '../security/cert_pinning.dart';
 import '../security/dpop_client.dart';
 import '../storage/secure_storage.dart';
 
-/// Paths that should never receive a DPoP proof.
 bool _skipDpop(String path) {
   return path.startsWith('/auth/dpop') ||
       path.startsWith('/oidc/') ||
@@ -15,8 +14,6 @@ bool _skipDpop(String path) {
       path == '/auth/refresh';
 }
 
-/// Paths whose 401 should NOT trigger an automatic refresh.
-/// These are the auth endpoints themselves - refreshing would loop.
 bool _isAuthEndpoint(String path) {
   return path == '/auth/login' ||
       path == '/auth/refresh' ||
@@ -28,9 +25,6 @@ bool _isAuthEndpoint(String path) {
 class DioClient {
   final Dio dio;
   final SecureStorage storage;
-
-  /// Set when a refresh is in-flight. All concurrent 401s await the same
-  /// future, so we only refresh once per expiry event.
   Future<bool>? _refreshFuture;
 
   DioClient(this.storage)
@@ -45,7 +39,18 @@ class DioClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          final token = await storage.readAccessToken();
+          // Read the token defensively. If secure storage is broken on
+          // this device, we proceed without a token rather than crashing
+          // the request. Endpoints that require auth will return 401 and
+          // the app can handle it properly.
+          String? token;
+          try {
+            token = await storage.readAccessToken();
+          } catch (e) {
+            debugPrint('[Dio] secure storage read failed: $e');
+            token = null;
+          }
+
           if (token != null && token.isNotEmpty) {
             options.headers['Authorization'] = 'Bearer $token';
 
@@ -74,8 +79,6 @@ class DioClient {
           final alreadyRetried =
               error.requestOptions.extra['_auth_retried'] == true;
 
-          // Trigger auto-refresh only on 401 from a non-auth endpoint,
-          // and only if we have not already retried this request.
           if (status == 401 &&
               !alreadyRetried &&
               !_isAuthEndpoint(path)) {
@@ -86,7 +89,6 @@ class DioClient {
                 return handler.resolve(retried);
               } catch (e) {
                 debugPrint('[Auth] retry after refresh failed: $e');
-                // Fall through to returning the original error.
               }
             }
           }
@@ -102,7 +104,6 @@ class DioClient {
     }
   }
 
-  /// Coalesce concurrent 401s into a single refresh attempt.
   Future<bool> _refreshOnce() {
     final inFlight = _refreshFuture;
     if (inFlight != null) return inFlight;
@@ -115,10 +116,15 @@ class DioClient {
   }
 
   Future<bool> _doRefresh() async {
-    final rt = await storage.readRefreshToken();
+    String? rt;
+    try {
+      rt = await storage.readRefreshToken();
+    } catch (e) {
+      debugPrint('[Auth] refresh token read failed: $e');
+      return false;
+    }
     if (rt == null || rt.isEmpty) return false;
 
-    // Use a bare Dio so this call cannot trigger our own interceptors.
     final bare = Dio(
       BaseOptions(
         baseUrl: Env.apiUrl,
@@ -134,30 +140,40 @@ class DioClient {
         data: {'refreshToken': rt},
       );
       final data = (res.data as Map).cast<String, dynamic>();
-      await storage.saveTokens(
-        data['accessToken'] as String,
-        data['refreshToken'] as String,
-      );
+      try {
+        await storage.saveTokens(
+          data['accessToken'] as String,
+          data['refreshToken'] as String,
+        );
+      } catch (e) {
+        debugPrint('[Auth] saving refreshed tokens failed: $e');
+      }
       debugPrint('[Auth] token refreshed');
       return true;
     } on DioException catch (e) {
       final code = e.response?.statusCode;
       debugPrint('[Auth] refresh failed ($code): ${e.message}');
-      // Refresh token is invalid, revoked, replayed, or expired.
-      // Clear everything - the user must log in again.
-      await storage.clear();
+      try {
+        await storage.clear();
+      } catch (_) {}
       return false;
     } catch (e) {
       debugPrint('[Auth] refresh failed: $e');
-      await storage.clear();
+      try {
+        await storage.clear();
+      } catch (_) {}
       return false;
     }
   }
 
-  /// Re-issue the failed request with the new access token and a fresh
-  /// DPoP proof (the old proof's `ath` binds to the old token).
   Future<Response<dynamic>> _retryWithFreshToken(RequestOptions original) async {
-    final newToken = await storage.readAccessToken();
+    String? newToken;
+    try {
+      newToken = await storage.readAccessToken();
+    } catch (e) {
+      debugPrint('[Dio] secure storage read failed on retry: $e');
+      throw StateError('no token after refresh');
+    }
     if (newToken == null || newToken.isEmpty) {
       throw StateError('no token after refresh');
     }

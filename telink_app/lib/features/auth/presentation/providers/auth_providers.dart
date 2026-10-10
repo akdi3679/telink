@@ -34,15 +34,10 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 class AuthNotifier extends AsyncNotifier<AuthResult?> {
   @override
   Future<AuthResult?> build() async {
-    // Attempt to restore the session. If it fails for a transient
-    // reason (cancel, timeout, connection), retry a couple of times
-    // before giving up. A hard 401/403 has already cleared tokens in
-    // the repository so a retry will return null quickly.
     for (var attempt = 0; attempt < 3; attempt++) {
       try {
         final session = await ref.read(authRepositoryProvider).me();
         if (session != null) {
-          // Fire-and-forget DPoP re-registration.
           _registerDpopAfterAuth();
         }
         return session;
@@ -55,13 +50,6 @@ class AuthNotifier extends AsyncNotifier<AuthResult?> {
         debugPrint(
             '[Auth] me() attempt ${attempt + 1} failed: ${e.type} ${e.message}');
         if (!transient || attempt == 2) {
-          // Non-transient or last attempt - decide based on stored tokens.
-          final token =
-              await ref.read(secureStorageProvider).readAccessToken();
-          if (token == null || token.isEmpty) return null;
-          // We still have tokens. Give the UI a chance to show the
-          // welcome screen with a "retry" affordance rather than
-          // pretending we're logged out.
           return null;
         }
         await Future.delayed(const Duration(milliseconds: 400));
@@ -73,58 +61,77 @@ class AuthNotifier extends AsyncNotifier<AuthResult?> {
     return null;
   }
 
-  Future<void> _registerDpopAfterAuth() async {
-    try {
-      final client = DpopClient();
-      await client.ensureKey();
-      final jwk = await client.publicJwk();
-      if (jwk == null) return;
-      await ref.read(dpopRepositoryProvider).register(jwk, deviceName: 'web');
-      debugPrint('[DPoP] registered for session');
-    } catch (e) {
-      debugPrint('[DPoP] register failed: $e');
-    }
+  /// Fire-and-forget DPoP registration. Never affects auth state.
+  void _registerDpopAfterAuth() {
+    Future(() async {
+      try {
+        final client = DpopClient();
+        await client.ensureKey();
+        final jwk = await client.publicJwk();
+        if (jwk == null) return;
+        await ref
+            .read(dpopRepositoryProvider)
+            .register(jwk, deviceName: 'mobile');
+        debugPrint('[DPoP] registered for session');
+      } catch (e) {
+        debugPrint('[DPoP] register failed (non-fatal): $e');
+      }
+    });
   }
 
   Future<void> login(String identifier, String password) async {
     state = const AsyncLoading();
+
+    // Only the actual login call can fail the login. Nothing else.
+    final AuthResult result;
     try {
-      final result =
-          await ref.read(authRepositoryProvider).login(identifier, password);
-      state = AsyncData(result);
-      await _registerDpopAfterAuth();
+      result = await ref
+          .read(authRepositoryProvider)
+          .login(identifier, password);
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
     }
+
+    // Login succeeded. Set state and fire DPoP registration
+    // asynchronously so it can never change the login result.
+    state = AsyncData(result);
+    _registerDpopAfterAuth();
   }
 
   Future<void> loginWithPasskey({String? identifier}) async {
     state = const AsyncLoading();
+
+    final AuthResult result;
     try {
       final repo = ref.read(authRepositoryProvider);
       final begin = await repo.passkeyLoginBegin(identifier: identifier);
       final client = WebAuthnClient();
       final response = await client.login(begin.options);
-      final result = await repo.passkeyLoginFinish(
+      result = await repo.passkeyLoginFinish(
         sessionId: begin.sessionId,
         response: response,
       );
-      state = AsyncData(result);
-      await _registerDpopAfterAuth();
     } catch (e, st) {
       state = AsyncError(e, st);
       rethrow;
     }
+
+    state = AsyncData(result);
+    _registerDpopAfterAuth();
   }
 
   Future<void> setSession(AuthResult result) async {
     state = AsyncData(result);
-    await _registerDpopAfterAuth();
+    _registerDpopAfterAuth();
   }
 
   Future<void> logout() async {
-    await ref.read(authRepositoryProvider).logout();
+    try {
+      await ref.read(authRepositoryProvider).logout();
+    } catch (e) {
+      debugPrint('[Auth] logout storage clear failed: $e');
+    }
     state = const AsyncData(null);
   }
 }
