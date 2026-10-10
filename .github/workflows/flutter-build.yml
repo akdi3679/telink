@@ -1,4 +1,4 @@
-name: Flutter Android Build + Appetize Upload
+name: Flutter Android Build
 
 on:
   push:
@@ -24,6 +24,9 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Flutter version
+        run: flutter --version
+
       - name: Install dependencies
         working-directory: telink_app
         run: flutter pub get
@@ -44,24 +47,9 @@ jobs:
         working-directory: telink_app
         run: ls -lh build/app/outputs/flutter-apk/
 
-      - name: Upload to Appetize
-        id: appetize
-        uses: appetizeio/github-action-appetize@v1.0.5
+      - name: Upload APKs
+        uses: actions/upload-artifact@v4
         with:
-          apiToken: ${{ secrets.APPETIZE_TOKEN }}
-          appFile: telink_app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
-          platform: 'android'
-
-      - name: Print stream URL
-        run: |
-          echo "════════════════════════════════════════"
-          echo "  YOUR APP IS LIVE ON APPETIZE"
-          echo "════════════════════════════════════════"
-          echo ""
-          echo "  Stream URL:"
-          echo "  https://appetize.io/app/${{ steps.appetize.outputs.publicKey }}"
-          echo ""
-          echo "  Open this URL in SRWare Iron."
-          echo "  The emulator starts in ~15 seconds."
-          echo ""
-          echo "════════════════════════════════════════"
+          name: telink-apks
+          path: telink_app/build/app/outputs/flutter-apk/*.apk
+          retention-days: 30
