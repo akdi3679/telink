@@ -38,7 +38,7 @@ jobs:
 
       - name: Build release APKs (split per ABI)
         working-directory: telink_app
-        run: flutter build apk --release --split-per-abi --dart-define=API_URL=https://2bdb-102-159-226-182.ngrok-free.app
+        run: flutter build apk --release --split-per-abi --dart-define=API_URL= https://236af602938955.lhr.life
 
       - name: List APKs
         working-directory: telink_app
