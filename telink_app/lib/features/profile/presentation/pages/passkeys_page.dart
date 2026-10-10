@@ -47,17 +47,91 @@ class PasskeysPage extends ConsumerWidget {
         ),
         data: (list) => _Body(list: list),
       ),
-      floatingActionButton: kIsWeb
-          ? FloatingActionButton.extended(
-              onPressed: () => _showAddDialog(context, ref),
-              icon: const Icon(Icons.add),
-              label: Text(
-                (async.valueOrNull?.isEmpty ?? true)
-                    ? 'Add passkey'
-                    : 'Add another',
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _onAdd(context, ref),
+        icon: const Icon(Icons.add),
+        label: Text(
+          (async.valueOrNull?.isEmpty ?? true) ? 'Add passkey' : 'Add another',
+        ),
+      ),
+    );
+  }
+}
+
+/// Tapping "Add passkey" on desktop/web runs the WebAuthn flow.
+/// On mobile (Android/iOS), the native passkey API is not wired yet,
+/// so we show an honest "coming soon" sheet.
+Future<void> _onAdd(BuildContext context, WidgetRef ref) async {
+  if (kIsWeb) {
+    await _showAddDialog(context, ref);
+    return;
+  }
+  await showModalBottomSheet(
+    context: context,
+    showDragHandle: true,
+    builder: (_) => const _NativeComingSoonSheet(),
+  );
+}
+
+class _NativeComingSoonSheet extends StatelessWidget {
+  const _NativeComingSoonSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.fingerprint, size: 32, color: theme.colorScheme.primary),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'Native passkeys on mobile',
+                  style: theme.textTheme.titleLarge
+                      ?.copyWith(fontWeight: FontWeight.w600),
+                ),
               ),
-            )
-          : null,
+            ],
+          ),
+          const SizedBox(height: 12),
+          Chip(
+            label: const Text('Coming next', style: TextStyle(fontSize: 12)),
+            backgroundColor: Colors.amber.shade100,
+            side: BorderSide.none,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Passkeys work today on the web build (your browser asks you to '
+            'use Windows Hello, a security key, or your phone).',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'On this phone, we will next integrate Android\'s native Credential '
+            'Manager so you can register a passkey with your fingerprint or '
+            'face. That is one more session of work.',
+            style: theme.textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 20),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(
+              'Meanwhile you can sign in with your email and password, and use '
+              'all other security features on this device.',
+              style: theme.textTheme.bodySmall,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -83,7 +157,7 @@ class _Body extends ConsumerWidget {
               ),
               SizedBox(height: 8),
               Text(
-                'Add a passkey to sign in without a password. Your private key stays on your device — nothing is shared with Telink.',
+                'Add a passkey to sign in without a password. Your private key stays on your device  nothing is shared with Telink.',
                 textAlign: TextAlign.center,
               ),
             ],
@@ -237,8 +311,7 @@ Future<void> _showAddDialog(BuildContext context, WidgetRef ref) async {
           ),
           const SizedBox(height: 12),
           Text(
-            'On this PC, use Windows Hello (PIN) or a USB security key. '
-            'Using your phone requires Bluetooth.',
+            'Your browser will ask you to use Windows Hello, a security key, or your phone.',
             style: TextStyle(
               fontSize: 12,
               color: Theme.of(ctx).colorScheme.onSurfaceVariant,

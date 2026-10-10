@@ -199,6 +199,16 @@ class _ProfileBody extends StatelessWidget {
                 const SizedBox(height: 8),
         Card(
           child: ListTile(
+            leading: const Icon(Icons.devices_outlined),
+            title: const Text('Active sessions'),
+            subtitle: const Text('Devices currently signed in'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.profileActiveSessions),
+          ),
+        ),
+                const SizedBox(height: 8),
+        Card(
+          child: ListTile(
             leading: const Icon(Icons.history_outlined),
             title: const Text('Login activity'),
             subtitle: const Text('Recent sign-ins and attempts'),

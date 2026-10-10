@@ -20,6 +20,7 @@ import '../../features/profile/presentation/pages/login_history_page.dart';
 import '../../features/debug/webauthn_check_page.dart';
 import '../../shared/widgets/main_shell.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
+import '../../features/profile/presentation/pages/active_sessions_page.dart';
 import 'routes.dart';
 
 class _RouterRefresh extends ChangeNotifier {
@@ -103,6 +104,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: Routes.profileLoginHistory,
           builder: (_, __) => const LoginHistoryPage()),
+      GoRoute(
+          path: Routes.profileActiveSessions,
+          builder: (_, __) => const ActiveSessionsPage()),
       GoRoute(
           path: Routes.debugWebauthn,
           builder: (_, __) => const WebAuthnCheckPage()),
