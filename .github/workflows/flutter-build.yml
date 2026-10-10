@@ -1,4 +1,4 @@
-name: Flutter Android Build
+name: Flutter Android Build + Appetize Upload
 
 on:
   push:
@@ -24,9 +24,6 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: Flutter version
-        run: flutter --version
-
       - name: Install dependencies
         working-directory: telink_app
         run: flutter pub get
@@ -39,13 +36,32 @@ jobs:
         working-directory: telink_app
         run: flutter test
 
-      - name: Build debug APKs (split per ABI)
+      - name: Build release APKs (split per ABI)
         working-directory: telink_app
         run: flutter build apk --release --split-per-abi --dart-define=API_URL=https://2bdb-102-159-226-182.ngrok-free.app
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - name: List APKs
+        working-directory: telink_app
+        run: ls -lh build/app/outputs/flutter-apk/
+
+      - name: Upload to Appetize
+        id: appetize
+        uses: appetizeio/github-action-appetize@v1.0.5
         with:
-          name: telink-debug-apk
-          path: telink_app/build/app/outputs/flutter-apk/*.apk
-          retention-days: 30
+          apiToken: ${{ secrets.APPETIZE_TOKEN }}
+          appFile: telink_app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
+          platform: 'android'
+
+      - name: Print stream URL
+        run: |
+          echo "════════════════════════════════════════"
+          echo "  YOUR APP IS LIVE ON APPETIZE"
+          echo "════════════════════════════════════════"
+          echo ""
+          echo "  Stream URL:"
+          echo "  https://appetize.io/app/${{ steps.appetize.outputs.publicKey }}"
+          echo ""
+          echo "  Open this URL in SRWare Iron."
+          echo "  The emulator starts in ~15 seconds."
+          echo ""
+          echo "════════════════════════════════════════"
