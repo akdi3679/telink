@@ -38,7 +38,7 @@ jobs:
 
       - name: Build release APKs (split per ABI)
         working-directory: telink_app
-        run: flutter build apk --release --split-per-abi --dart-define=API_URL=https://delivering-lips-logan-porcelain.trycloudflare.com
+        run: flutter build apk --release --split-per-abi --dart-define=API_URL=http://localhost:3000
 
       - name: List APKs
         working-directory: telink_app
