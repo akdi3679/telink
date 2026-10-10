@@ -41,7 +41,7 @@ jobs:
 
       - name: Build debug APKs (split per ABI)
         working-directory: telink_app
-        run: flutter build apk --debug --split-per-abi --dart-define=API_URL=https://2bdb-102-159-226-182.ngrok-free.app
+        run: flutter build apk --release --split-per-abi --dart-define=API_URL=https://2bdb-102-159-226-182.ngrok-free.app
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
