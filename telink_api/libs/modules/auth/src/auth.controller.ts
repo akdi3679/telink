@@ -1,7 +1,7 @@
 import {
   Body,
   Controller,
-    Delete,
+  Delete,
   Get,
   Headers,
   HttpCode,
@@ -17,7 +17,7 @@ import {
   SignupStartDto,
   SignupVerifyEmailDto,
 } from './dto';
-
+import { RequireStepUp, StepUpGuard } from './stepup.guard';
 function resolveClientIp(
   realIp: string | undefined,
   testIp: string | undefined,
@@ -126,7 +126,8 @@ export class AuthController {
 
   @Delete('account')
   @HttpCode(204)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, StepUpGuard)
+  @RequireStepUp()
   async deleteAccount(@CurrentUser() user: JwtPayload) {
     await this.auth.deleteAccount(user.sub);
   }

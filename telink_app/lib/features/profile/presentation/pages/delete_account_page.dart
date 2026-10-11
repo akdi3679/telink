@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../stepup_actions.dart';
 
 class DeleteAccountPage extends ConsumerStatefulWidget {
   const DeleteAccountPage({super.key});
@@ -20,11 +21,16 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
     super.dispose();
   }
 
-  Future<void> _delete() async {
+    Future<void> _delete() async {
     if (_confirm.text.trim().toUpperCase() != 'DELETE') {
       setState(() => _error = 'Type DELETE to confirm');
       return;
     }
+
+    // Step-up FIRST — prove identity before showing the destructive dialog.
+    final verified = await requireStepUp(context, ref);
+    if (!verified) { return; }
+    if (!mounted) { return; }
 
     final ok = await showDialog<bool>(
       context: context,
@@ -59,7 +65,6 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
       final dio = ref.read(dioClientProvider).dio;
       await dio.delete('/auth/account');
       await ref.read(authProvider.notifier).logout();
-      // Router redirects to Welcome after logout.
     } catch (e) {
       setState(() => _error = 'Could not delete account. Try again.');
     } finally {

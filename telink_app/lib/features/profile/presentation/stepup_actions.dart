@@ -9,7 +9,11 @@ import 'widgets/stepup_verify_dialog.dart';
 /// Returns true if the action should proceed, false otherwise.
 Future<bool> requireStepUp(BuildContext context, WidgetRef ref) async {
   try {
+      // Never trust a cached elevation status before a destructive action.
+    // A previous session's cache can outlive a logout.
+    ref.invalidate(stepUpStatusProvider);
     final status = await ref.read(stepUpStatusProvider.future);
+    
     if (status.elevated) return true;
     if (!status.hasQuestions) {
       if (!context.mounted) return false;
