@@ -17,6 +17,9 @@ import '../../features/profile/presentation/pages/bio_verification_page.dart';
 import '../../features/profile/presentation/pages/security_questions_page.dart';
 import '../../features/profile/presentation/pages/security_overview_page.dart';
 import '../../features/profile/presentation/pages/login_history_page.dart';
+import '../../features/profile/presentation/pages/change_password_page.dart';
+import '../../features/profile/presentation/pages/delete_account_page.dart';
+import '../../features/profile/presentation/pages/two_factor_page.dart';
 import '../../features/debug/webauthn_check_page.dart';
 import '../../shared/widgets/main_shell.dart';
 import '../../features/auth/presentation/providers/auth_providers.dart';
@@ -107,6 +110,15 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
           path: Routes.profileActiveSessions,
           builder: (_, __) => const ActiveSessionsPage()),
+      GoRoute(
+          path: Routes.profileChangePassword,
+          builder: (_, __) => const ChangePasswordPage()),
+      GoRoute(
+          path: Routes.profileDeleteAccount,
+          builder: (_, __) => const DeleteAccountPage()),
+      GoRoute(
+          path: Routes.profileTwoFactor,
+          builder: (_, __) => const TwoFactorPage()),
       GoRoute(
           path: Routes.debugWebauthn,
           builder: (_, __) => const WebAuthnCheckPage()),

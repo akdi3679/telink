@@ -393,7 +393,43 @@ export class AuthService {
       profile: user.profile,
     };
   }
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw BizErr.NotFound('User');
 
+    const ok = await argonVerify(user.passwordHash, currentPassword).catch(() => false);
+    if (!ok) throw BizErr.Unauthorized('Current password is incorrect');
+
+    const newHash = await argonHash(newPassword);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+
+    // Revoke all other sessions
+    await this.tokens.revokeAllForUser(userId, 'password_changed');
+
+    await this.events.write({
+      userId,
+      action: 'auth.password.changed',
+    });
+
+    return { ok: true };
+  }
+
+  async deleteAccount(userId: string) {
+    await this.events.write({
+      userId,
+      action: 'auth.account.deleted',
+    });
+
+    // Hard delete - cascades to all related rows via Prisma onDelete
+    await this.prisma.user.delete({ where: { id: userId } });
+  }
   // ── Me ──────────────────────────────────────────────────────
   async getMe(userId: string) {
     const user = await this.prisma.user.findUnique({

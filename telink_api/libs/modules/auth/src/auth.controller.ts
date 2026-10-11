@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+    Delete,
   Get,
   Headers,
   HttpCode,
@@ -101,7 +102,34 @@ export class AuthController {
       throw e;
     }
   }
+  @Post('password/change')
+  @HttpCode(200)
+  @UseGuards(JwtAuthGuard)
+  async changePassword(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { currentPassword: string; newPassword: string },
+  ) {
+    if (!body?.currentPassword || !body?.newPassword) {
+      throw BizErr.BadRequest('currentPassword and newPassword required');
+    }
+    if (
+      body.newPassword.length < 8 ||
+      !/[A-Za-z]/.test(body.newPassword) ||
+      !/\d/.test(body.newPassword)
+    ) {
+      throw BizErr.BadRequest(
+        'Password must be at least 8 characters and contain a letter and a number',
+      );
+    }
+    return this.auth.changePassword(user.sub, body.currentPassword, body.newPassword);
+  }
 
+  @Delete('account')
+  @HttpCode(204)
+  @UseGuards(JwtAuthGuard)
+  async deleteAccount(@CurrentUser() user: JwtPayload) {
+    await this.auth.deleteAccount(user.sub);
+  }
   @Get('me')
   @UseGuards(JwtAuthGuard)
   me(@CurrentUser() user: JwtPayload) {

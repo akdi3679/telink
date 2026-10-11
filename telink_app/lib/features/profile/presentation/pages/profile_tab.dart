@@ -155,6 +155,39 @@ class _ProfileBody extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 24),
+                const SizedBox(height: 24),
+        Text('Account', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.lock_outline),
+            title: const Text('Change password'),
+            subtitle: const Text('Update your account password'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.profileChangePassword),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: const Icon(Icons.security),
+            title: const Text('Two-factor authentication'),
+            subtitle: const Text('Passkeys, security questions, TOTP'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.profileTwoFactor),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Card(
+          child: ListTile(
+            leading: Icon(Icons.delete_forever, color: theme.colorScheme.error),
+            title: Text('Delete account',
+                style: TextStyle(color: theme.colorScheme.error)),
+            subtitle: const Text('Permanently remove your account and data'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => context.push(Routes.profileDeleteAccount),
+          ),
+        ),
                Text('Security', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
         Card(

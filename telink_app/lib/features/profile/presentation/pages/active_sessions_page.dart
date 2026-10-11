@@ -143,13 +143,13 @@ class _Body extends ConsumerWidget {
         ],
       ),
     );
-    if (ok != true) return;
-    if (!context.mounted) return;
+    if (ok != true) { return; }
+    if (!context.mounted) { return; }
 
     // Step-up for this high-risk action.
     final verified = await requireStepUp(context, ref);
-    if (!verified) return;
-    if (!context.mounted) return;
+    if (!verified) { return; }
+    if (!context.mounted) { return; }
 
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -271,8 +271,8 @@ class _SessionCard extends ConsumerWidget {
         ],
       ),
     );
-    if (ok != true) return;
-    if (!context.mounted) return;
+    if (ok != true) { return; }
+    if (!context.mounted) { return; }
 
     final messenger = ScaffoldMessenger.of(context);
     try {
@@ -288,14 +288,15 @@ class _SessionCard extends ConsumerWidget {
     }
   }
 
-  static String _deviceLabel(String? ua) {
+    static String _deviceLabel(String? ua) {
     if (ua == null || ua.isEmpty) return 'Unknown device';
     final lower = ua.toLowerCase();
     if (lower.contains('android')) return 'Android device';
     if (lower.contains('iphone') || lower.contains('ipad')) return 'iOS device';
     if (lower.contains('windows')) return 'Windows';
-    if (lower.contains('macintosh') || lower.contains('mac os'))
+    if (lower.contains('macintosh') || lower.contains('mac os')) {
       return 'Mac';
+    }
     if (lower.contains('linux')) return 'Linux';
     if (lower.contains('chrome')) return 'Chrome';
     if (lower.contains('firefox')) return 'Firefox';

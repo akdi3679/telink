@@ -16,5 +16,8 @@ class Routes {
   static const profileSecurityOverview = '/profile/security-overview';
   static const profileLoginHistory = '/profile/login-history';
     static const profileActiveSessions = '/profile/sessions';
+  static const profileChangePassword = '/profile/change-password';
+  static const profileDeleteAccount = '/profile/delete-account';
+  static const profileTwoFactor = '/profile/2fa';
   static const debugWebauthn = '/debug/webauthn';
 }
